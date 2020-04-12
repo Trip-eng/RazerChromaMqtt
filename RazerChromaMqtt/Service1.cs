@@ -80,7 +80,6 @@ namespace RazerChromaMqtt
                 log.Error("Mqtt connect eror : " + e.Message);
                 base.Stop();
             }
-            Thread.Sleep(1000);
         }
 
 
@@ -110,8 +109,6 @@ namespace RazerChromaMqtt
                 log.Error(payload + " is no valid color");
                 return false;
             }
-
-
 
             if (topic.Length >= 1)
                 switch (topic[0].ToLower())
@@ -208,6 +205,68 @@ namespace RazerChromaMqtt
                                     chroma.Keypad.SetAllAsync(c);
                                     break;
                                 case "mouse":
+
+                                    if (topic.Length >= 3)
+                                    {
+                                        switch (topic[2].ToLower())
+                                        {
+                                            case "all":
+                                                chroma.Mouse.SetAllAsync(c);
+                                                break;
+                                            case "gridled":
+                                                if (topic.Length < 4)
+                                                {
+                                                    log.Error("Key is no specified ");
+                                                    return false;
+                                                }
+                                                Colore.Effects.Mouse.GridLed gridLed;
+                                                if (Enum.TryParse(topic[3], out gridLed))
+                                                {
+                                                    chroma.Mouse[gridLed] = c;
+                                                }
+                                                else
+                                                {
+                                                    log.Error(topic[3] + " is no valid GridLed");
+                                                    return false;
+                                                }
+                                                break;
+                                            case "grid":
+                                                //2,3 Wheel 
+                                                //7,3 Logo
+                                                if (topic.Length < 5)
+                                                {
+                                                    log.Error("Position is no specified ");
+                                                    return false;
+                                                }
+                                                int row, column;
+                                                if (!int.TryParse(topic[3], out row))
+                                                {
+                                                    log.Error(topic[3] + " nan");
+                                                    return false;
+                                                }
+                                                if (!int.TryParse(topic[4], out column))
+                                                {
+                                                    log.Error(topic[4] + " nan");
+                                                    return false;
+                                                }
+                                                if (row >= Colore.Effects.Mouse.MouseConstants.MaxRows)
+                                                {
+                                                    log.Error(row + " out of range. Max:" + Colore.Effects.Mouse.MouseConstants.MaxRows);
+                                                    return false;
+                                                }
+                                                if (column >= Colore.Effects.Mouse.MouseConstants.MaxColumns)
+                                                {
+                                                    log.Error(column + " out of range. Max:" + Colore.Effects.Mouse.MouseConstants.MaxColumns);
+                                                    return false;
+                                                }
+                                                chroma.Mouse[row, column] = c;
+                                                break;
+                                            default:
+                                                return false;
+                                        }
+
+                                    }
+
                                     chroma.Mouse.SetAllAsync(c);
                                     break;
                                 case "mousepad":
