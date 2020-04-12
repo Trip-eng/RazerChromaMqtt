@@ -14,6 +14,7 @@ using log4net.Config;
 using ColoreColor = Colore.Data.Color;
 using MqttLib;
 using Colore;
+using Colore.Effects.Keyboard;
 
 namespace RazerChromaMqtt
 {
@@ -104,6 +105,7 @@ namespace RazerChromaMqtt
             }
             catch
             {
+                log.Error(payload + " is no valid color");
                 return false;
             }
 
@@ -119,30 +121,52 @@ namespace RazerChromaMqtt
                             {
                                 case "all":
                                     chroma.SetAllAsync(c);
-
                                     break;
                                 case "mouse":
                                     chroma.Mouse.SetAllAsync(c);
                                     break;
                                 case "keyboard":
-                                    chroma.Keyboard.SetAllAsync(c);
+                                    switch (topic.Length)
+                                    {
+                                        case 2:
+                                            chroma.Keyboard.SetAllAsync(c);
+                                            break;
+                                        case 3:
+                                            Key key;
+                                            if (Enum.TryParse(topic[2], out key))
+                                            {
+                                                chroma.Keyboard[key] = c;
+                                            }
+                                            else
+                                            {
+                                                log.Error(topic[2] + " is no valid key");
+                                                return false;
+                                            }
+                                            break;
+
+                                        default:
+                                            return false;
+                                    }
                                     break;
                                 default:
                                     return false;
 
                             }
-                            mqttC.Publish(mqttPreTopic + "state/" + topic[1], new MqttPayload(ColoreToHex(c)), QoS.BestEfforts, false);
+                            string retTopic = "state/";
+                            for (int i = 1; i < topic.Length; i++)
+                            {
+                                retTopic += topic[i] + "/";
+                            }
+                            mqttC.Publish(mqttPreTopic + retTopic, new MqttPayload(ColoreToHex(c)), QoS.BestEfforts, false);
                         }
-                        else
-                            chroma.SetAllAsync(c);
                         break;
                     default:
+
                         break;
                 }
 
             return true;
         }
-
 
         protected override void OnStop()
         {
