@@ -40,7 +40,7 @@
             // 
             // serviceInstaller1
             // 
-            this.serviceInstaller1.Description = "Connect Razer Chroma with MQTT";
+            this.serviceInstaller1.Description = "Connects Razer Chroma with MQTT";
             this.serviceInstaller1.DisplayName = "Razer Chroma Mqtt";
             this.serviceInstaller1.ServiceName = "RazerChromaMqtt";
             this.serviceInstaller1.ServicesDependedOn = new string[] {
