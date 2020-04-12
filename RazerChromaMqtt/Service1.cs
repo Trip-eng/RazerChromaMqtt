@@ -53,7 +53,7 @@ namespace RazerChromaMqtt
 
             MqttAppender.mqttClient = mqttClient;
             MqttAppender.mqttPreTopic = mqttPreTopic;
-        
+            
         }
 
 
@@ -235,8 +235,6 @@ namespace RazerChromaMqtt
                                                 }
                                                 break;
                                             case "grid":
-                                                //2,3 Wheel 
-                                                //7,3 Logo
                                                 if (topic.Length < 5)
                                                 {
                                                     log.Error("Position is no specified ");
@@ -271,7 +269,6 @@ namespace RazerChromaMqtt
                                         }
 
                                     }
-                                    chroma.Mouse.SetAllAsync(c);
                                     break;
                                 case "mousepad":
                                     chroma.Mousepad.SetAllAsync(c);
