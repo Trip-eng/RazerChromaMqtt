@@ -15,6 +15,7 @@ using ColoreColor = Colore.Data.Color;
 using MqttLib;
 using Colore;
 using Colore.Effects.Keyboard;
+using System.Threading;
 
 namespace RazerChromaMqtt
 {
@@ -79,6 +80,7 @@ namespace RazerChromaMqtt
                 log.Error("Mqtt connect eror : " + e.Message);
                 base.Stop();
             }
+            Thread.Sleep(1000);
         }
 
 
@@ -98,7 +100,7 @@ namespace RazerChromaMqtt
         {
             string[] topic = e.Topic.Substring(mqttPreTopic.Length).Split('/');
             string payload = e.Payload;
-            ColoreColor c;
+            ColoreColor c;  
             try
             {
                 c = HexToColore(payload);
@@ -112,41 +114,107 @@ namespace RazerChromaMqtt
 
 
             if (topic.Length >= 1)
-                switch (topic[0])
+                switch (topic[0].ToLower())
                 {
                     case "set":
                         if (topic.Length >= 2)
                         {
-                            switch (topic[1])
+                            switch (topic[1].ToLower())
                             {
+                                
                                 case "all":
                                     chroma.SetAllAsync(c);
+                                    break;
+                                case "keyboard":
+                                    if (topic.Length >= 3)
+                                    {
+                                        switch (topic[2].ToLower())
+                                        {
+                                            case "all":
+                                                chroma.Keyboard.SetAllAsync(c);
+                                                break;
+                                            case "key":
+                                                if (topic.Length < 4)
+                                                {
+                                                    log.Error("Key is no specified ");
+                                                    return false;
+                                                }
+                                                Key key;
+                                                if (Enum.TryParse(topic[3], out key))
+                                                {
+                                                    chroma.Keyboard[key] = c;
+                                                }
+                                                else
+                                                {
+                                                    log.Error(topic[3] + " is no valid key");
+                                                    return false;
+                                                }
+                                                break;
+                                            case "grid":
+                                                if (topic.Length < 5)
+                                                {
+                                                    log.Error("Position is no specified ");
+                                                    return false;
+                                                }
+                                                int row, column;
+                                                if(!int.TryParse(topic[3],out row))
+                                                {
+                                                    log.Error(topic[3] + " nan");
+                                                    return false;
+                                                }
+                                                if (!int.TryParse(topic[4], out column))
+                                                {
+                                                    log.Error(topic[4] + " nan");
+                                                    return false;
+                                                }
+                                                if (row >= KeyboardConstants.MaxRows)
+                                                {
+                                                    log.Error(row + " out of range. Max:" + KeyboardConstants.MaxRows);
+                                                    return false;
+                                                }
+                                                if (column >= KeyboardConstants.MaxColumns)
+                                                {
+                                                    log.Error(column + " out of range. Max:" + KeyboardConstants.MaxColumns);
+                                                    return false;
+                                                }
+                                                chroma.Keyboard[row, column] = c;
+                                                break;
+                                            case "zone":
+                                                if (topic.Length < 4)
+                                                {
+                                                    log.Error("Zone is no specified ");
+                                                    return false;
+                                                }
+                                                int zone;
+                                                if (!int.TryParse(topic[3], out zone))
+                                                {
+                                                    log.Error(topic[3] + " nan");
+                                                    return false;
+                                                }
+                                                if (zone >= KeyboardConstants.MaxDeathstalkerZones)
+                                                {
+                                                    log.Error(zone + " out of range. Max:" + KeyboardConstants.MaxDeathstalkerZones);
+                                                    return false;
+                                                }
+                                                chroma.Keyboard[zone] = c;
+                                                break;
+                                            default:
+                                                return false;
+                                        }
+                                        
+                                    }
+                                    break;
+                                case "keypad":
+                                    chroma.Keypad.SetAllAsync(c);
                                     break;
                                 case "mouse":
                                     chroma.Mouse.SetAllAsync(c);
                                     break;
-                                case "keyboard":
-                                    switch (topic.Length)
-                                    {
-                                        case 2:
-                                            chroma.Keyboard.SetAllAsync(c);
-                                            break;
-                                        case 3:
-                                            Key key;
-                                            if (Enum.TryParse(topic[2], out key))
-                                            {
-                                                chroma.Keyboard[key] = c;
-                                            }
-                                            else
-                                            {
-                                                log.Error(topic[2] + " is no valid key");
-                                                return false;
-                                            }
-                                            break;
-
-                                        default:
-                                            return false;
-                                    }
+                                case "mousepad":
+                                    chroma.Mousepad.SetAllAsync(c);
+                                    break;
+                                case "headset":
+                                    chroma.Headset.SetAllAsync(c);
                                     break;
                                 default:
                                     return false;
