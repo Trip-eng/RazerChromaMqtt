@@ -114,7 +114,6 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="App.config" />
-    <None Include="App_defalut.config" />
     <None Include="packages.config" />
     <None Include="Properties\Settings.settings">
       <Generator>SettingsSingleFileGenerator</Generator>
@@ -139,7 +138,7 @@
       <TargetPath>%(Filename)%(Extension)</TargetPath>
     </ContentWithTargetPath>
   </ItemGroup>
-    <ItemGroup>
+  <ItemGroup>
     <ContentWithTargetPath Include="ChromaAppInfo.xml">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
       <TargetPath>%(Filename)%(Extension)</TargetPath>
