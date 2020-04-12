@@ -23,7 +23,7 @@ namespace RazerChromaMqtt
     {
         ILog log;
         IChroma chroma;
-        IMqtt mqttC;
+        IMqtt mqttClient;
 
         string mqttHost, mqttUser, mqttPw, mqttPreTopic;
 
@@ -34,21 +34,26 @@ namespace RazerChromaMqtt
 
             //Logger
             XmlConfigurator.Configure(new FileInfo(ConfigurationManager.AppSettings["logConfig"]));
+            log = LogManager.GetLogger("RazerChromaMqtt");
+            
 
 
             // User Settings
             var userSetting = Properties.Settings.Default;
-            log = LogManager.GetLogger("RazerChromaMqtt");
             mqttHost = userSetting.MqttIP + ":" + userSetting.MqttPort;
             mqttUser = userSetting.MqttUser;
             mqttPw = userSetting.MqttPw;
             if (mqttUser == "" || mqttPw == "") mqttUser = mqttPw = null;
             mqttPreTopic = userSetting.MqttPreTopic;
 
-            mqttC = MqttClientFactory.CreateClient("tcp://" + mqttHost, "chroma", mqttUser, mqttPw);
-            mqttC.Connected += MqttC_Connected;
-            mqttC.ConnectionLost += MqttC_ConnectionLost;
-            mqttC.PublishArrived += MqttC_PublishArrived;
+            mqttClient = MqttClientFactory.CreateClient("tcp://" + mqttHost, "chroma", mqttUser, mqttPw);
+            mqttClient.Connected += MqttC_Connected;
+            mqttClient.ConnectionLost += MqttC_ConnectionLost;
+            mqttClient.PublishArrived += MqttC_PublishArrived;
+
+            MqttAppender.mqttClient = mqttClient;
+            MqttAppender.mqttPreTopic = mqttPreTopic;
+        
         }
 
 
@@ -72,7 +77,7 @@ namespace RazerChromaMqtt
             chroma = task.Result;
             try
             {
-                mqttC.Connect(mqttPreTopic + "state", QoS.BestEfforts, new MqttPayload("offline"), false);
+                mqttClient.Connect(mqttPreTopic + "state", QoS.BestEfforts, new MqttPayload("offline"), false);
 
             }
             catch (Exception e)
@@ -86,8 +91,8 @@ namespace RazerChromaMqtt
         private void MqttC_Connected(object sender, EventArgs e)
         {
             log.Info("Mqtt Connect");
-            mqttC.Subscribe(mqttPreTopic + "set/#", QoS.BestEfforts);
-            mqttC.Publish(mqttPreTopic + "state", new MqttPayload("online"), QoS.BestEfforts, false);
+            mqttClient.Subscribe(mqttPreTopic + "set/#", QoS.BestEfforts);
+            mqttClient.Publish(mqttPreTopic + "state", new MqttPayload("online"), QoS.BestEfforts, false);
         }
 
         private void MqttC_ConnectionLost(object sender, EventArgs e)
@@ -118,7 +123,6 @@ namespace RazerChromaMqtt
                         {
                             switch (topic[1].ToLower())
                             {
-                                
                                 case "all":
                                     chroma.SetAllAsync(c);
                                     break;
@@ -143,7 +147,7 @@ namespace RazerChromaMqtt
                                                 }
                                                 else
                                                 {
-                                                    log.Error(topic[3] + " is no valid key");
+                                                    log.Error($"\"{topic[3]}\" is no valid key");
                                                     return false;
                                                 }
                                                 break;
@@ -156,22 +160,22 @@ namespace RazerChromaMqtt
                                                 int row, column;
                                                 if(!int.TryParse(topic[3],out row))
                                                 {
-                                                    log.Error(topic[3] + " nan");
+                                                    log.Error($"\"{topic[3]}\" nan");
                                                     return false;
                                                 }
                                                 if (!int.TryParse(topic[4], out column))
                                                 {
-                                                    log.Error(topic[4] + " nan");
+                                                    log.Error($"\"{topic[4]}\" nan");
                                                     return false;
                                                 }
                                                 if (row >= KeyboardConstants.MaxRows)
                                                 {
-                                                    log.Error(row + " out of range. Max:" + KeyboardConstants.MaxRows);
+                                                    log.Error($"\"{row}\" out of range. Max:" + KeyboardConstants.MaxRows);
                                                     return false;
                                                 }
                                                 if (column >= KeyboardConstants.MaxColumns)
                                                 {
-                                                    log.Error(column + " out of range. Max:" + KeyboardConstants.MaxColumns);
+                                                    log.Error($"\"{column}\" out of range. Max:" + KeyboardConstants.MaxColumns);
                                                     return false;
                                                 }
                                                 chroma.Keyboard[row, column] = c;
@@ -185,17 +189,18 @@ namespace RazerChromaMqtt
                                                 int zone;
                                                 if (!int.TryParse(topic[3], out zone))
                                                 {
-                                                    log.Error(topic[3] + " nan");
+                                                    log.Error($"\"{topic[3]}\" nan");
                                                     return false;
                                                 }
                                                 if (zone >= KeyboardConstants.MaxDeathstalkerZones)
                                                 {
-                                                    log.Error(zone + " out of range. Max:" + KeyboardConstants.MaxDeathstalkerZones);
+                                                    log.Error($"\"{zone}\" out of range. Max:" + KeyboardConstants.MaxDeathstalkerZones);
                                                     return false;
                                                 }
                                                 chroma.Keyboard[zone] = c;
                                                 break;
                                             default:
+                                                log.Error($"\"{topic[2]}\" unknown");
                                                 return false;
                                         }
                                         
@@ -205,7 +210,6 @@ namespace RazerChromaMqtt
                                     chroma.Keypad.SetAllAsync(c);
                                     break;
                                 case "mouse":
-
                                     if (topic.Length >= 3)
                                     {
                                         switch (topic[2].ToLower())
@@ -226,7 +230,7 @@ namespace RazerChromaMqtt
                                                 }
                                                 else
                                                 {
-                                                    log.Error(topic[3] + " is no valid GridLed");
+                                                    log.Error($"\"{topic[3]}\" is no valid GridLed");
                                                     return false;
                                                 }
                                                 break;
@@ -241,32 +245,32 @@ namespace RazerChromaMqtt
                                                 int row, column;
                                                 if (!int.TryParse(topic[3], out row))
                                                 {
-                                                    log.Error(topic[3] + " nan");
+                                                    log.Error($"\"{topic[3]}\" nan");
                                                     return false;
                                                 }
                                                 if (!int.TryParse(topic[4], out column))
                                                 {
-                                                    log.Error(topic[4] + " nan");
+                                                    log.Error($"\"{topic[4]}\" nan");
                                                     return false;
                                                 }
                                                 if (row >= Colore.Effects.Mouse.MouseConstants.MaxRows)
                                                 {
-                                                    log.Error(row + " out of range. Max:" + Colore.Effects.Mouse.MouseConstants.MaxRows);
+                                                    log.Error($"\"{row}\" out of range. Max:" + Colore.Effects.Mouse.MouseConstants.MaxRows);
                                                     return false;
                                                 }
                                                 if (column >= Colore.Effects.Mouse.MouseConstants.MaxColumns)
                                                 {
-                                                    log.Error(column + " out of range. Max:" + Colore.Effects.Mouse.MouseConstants.MaxColumns);
+                                                    log.Error($"\"{column}\" out of range. Max:" + Colore.Effects.Mouse.MouseConstants.MaxColumns);
                                                     return false;
                                                 }
                                                 chroma.Mouse[row, column] = c;
                                                 break;
                                             default:
+                                                log.Error($"\"{topic[2]}\" unknown");
                                                 return false;
                                         }
 
                                     }
-
                                     chroma.Mouse.SetAllAsync(c);
                                     break;
                                 case "mousepad":
@@ -276,6 +280,7 @@ namespace RazerChromaMqtt
                                     chroma.Headset.SetAllAsync(c);
                                     break;
                                 default:
+                                    log.Error($"\"{topic[1]}\" unknown");
                                     return false;
 
                             }
@@ -284,12 +289,12 @@ namespace RazerChromaMqtt
                             {
                                 retTopic += topic[i] + "/";
                             }
-                            mqttC.Publish(mqttPreTopic + retTopic, new MqttPayload(ColoreToHex(c)), QoS.BestEfforts, false);
+                            mqttClient.Publish(mqttPreTopic + retTopic, new MqttPayload(ColoreToHex(c)), QoS.BestEfforts, false);
                         }
                         break;
                     default:
-
-                        break;
+                        log.Error($"\"{topic[0]}\" unknown");
+                        return false;
                 }
 
             return true;
