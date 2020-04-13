@@ -1,21 +1,14 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.ComponentModel;
-using System.Configuration;
-using System.Data;
-using System.Diagnostics;
-using System.IO;
-using System.Linq;
 using System.ServiceProcess;
-using System.Text;
 using System.Threading.Tasks;
 using log4net;
-using log4net.Config;
 using ColoreColor = Colore.Data.Color;
 using MqttLib;
 using Colore;
 using Colore.Effects.Keyboard;
-using System.Threading;
+using System.Xml;
+
+[assembly: log4net.Config.XmlConfigurator(Watch = true)]
 
 namespace RazerChromaMqtt
 {
@@ -25,7 +18,7 @@ namespace RazerChromaMqtt
         IChroma chroma;
         IMqtt mqttClient;
 
-        string mqttHost, mqttUser, mqttPw, mqttPreTopic;
+        string mqttHost, mqttPort, mqttUser, mqttPw, mqttPreTopic;
 
 
         public Service1()
@@ -33,33 +26,14 @@ namespace RazerChromaMqtt
             InitializeComponent();
 
             //Logger
-            XmlConfigurator.Configure(new FileInfo(ConfigurationManager.AppSettings["logConfig"]));
             log = LogManager.GetLogger("RazerChromaMqtt");
-            
 
-
-            // User Settings
-            var userSetting = Properties.Settings.Default;
-            mqttHost = userSetting.MqttIP + ":" + userSetting.MqttPort;
-            mqttUser = userSetting.MqttUser;
-            mqttPw = userSetting.MqttPw;
-            if (mqttUser == "" || mqttPw == "") mqttUser = mqttPw = null;
-            mqttPreTopic = userSetting.MqttPreTopic;
-
-            mqttClient = MqttClientFactory.CreateClient("tcp://" + mqttHost, "chroma", mqttUser, mqttPw);
-            mqttClient.Connected += MqttC_Connected;
-            mqttClient.ConnectionLost += MqttC_ConnectionLost;
-            mqttClient.PublishArrived += MqttC_PublishArrived;
-
-            MqttAppender.mqttClient = mqttClient;
-            MqttAppender.mqttPreTopic = mqttPreTopic;
-            
         }
 
 
         public void OnDebugStart()
         {
-            OnStart(null);
+            init();
         }
 
         public void OnDebugStop()
@@ -67,24 +41,53 @@ namespace RazerChromaMqtt
             OnStop();
         }
 
+
+        void init()
+        {
+            // User Settings
+            
+            XmlDocument xmlConfig = new XmlDocument();
+            xmlConfig.Load(AppDomain.CurrentDomain.BaseDirectory + "config.xml");
+            var mqttConfig = xmlConfig["RazerChromaMqtt"]["MQTT"];
+            var v = mqttConfig["MqttUser"].InnerText.Trim();
+            mqttHost = mqttConfig["MqttHost"].InnerText.Trim();
+            mqttPort = mqttConfig["MqttPort"].InnerText.Trim();
+            mqttUser = mqttConfig["MqttUser"].InnerText.Trim();
+            mqttPw = mqttConfig["MqttPw"].InnerText.Trim();
+            mqttPreTopic = mqttConfig["MqttPreTopic"].InnerText.Trim();
+            
+            if (mqttUser == "" || mqttPw == "") mqttUser = mqttPw = null;
+
+
+            // MQTT 
+            mqttClient = MqttClientFactory.CreateClient($"tcp://{mqttHost}:{mqttPort}", "chroma", mqttUser, mqttPw);
+            mqttClient.Connected += MqttC_Connected;
+            mqttClient.ConnectionLost += MqttC_ConnectionLost;
+            mqttClient.PublishArrived += MqttC_PublishArrived;
+
+            MqttAppender.mqttClient = mqttClient;
+            MqttAppender.mqttPreTopic = mqttPreTopic;
+            
+            try
+                {
+                    mqttClient.Connect(mqttPreTopic + "state", QoS.BestEfforts, new MqttPayload("offline"), false);
+
+                }
+                catch (Exception e)
+                {
+                    log.Error("Mqtt connect eror : " + e.Message);
+                    base.Stop();
+                }
+            
+
+            Task<IChroma> connectChroma = ColoreProvider.CreateNativeAsync();
+            connectChroma.Wait();
+            chroma = connectChroma.Result;
+        }
         protected override void OnStart(string[] args)
         {
-            log.Debug("start");
-
-            Task<IChroma> task = ColoreProvider.CreateNativeAsync();
-            task.Wait();
-
-            chroma = task.Result;
-            try
-            {
-                mqttClient.Connect(mqttPreTopic + "state", QoS.BestEfforts, new MqttPayload("offline"), false);
-
-            }
-            catch (Exception e)
-            {
-                log.Error("Mqtt connect eror : " + e.Message);
-                base.Stop();
-            }
+            log.Info("Service Start");
+            init();
         }
 
 
@@ -462,9 +465,11 @@ namespace RazerChromaMqtt
         protected override void OnStop()
         {
             if(mqttClient.IsConnected) mqttClient.Disconnect();
-            
+
 #if DEBUG
             Environment.Exit(0);
+#else
+            log.Info("Service Stop");
 #endif
         }
 

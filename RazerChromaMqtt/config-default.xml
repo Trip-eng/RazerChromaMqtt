@@ -1,0 +1,10 @@
+﻿<?xml version="1.0" encoding="utf-8" ?>
+<RazerChromaMqtt>
+  <MQTT>
+    <MqttHost>127.0.0.1</MqttHost>
+    <MqttPort>1883</MqttPort>
+    <MqttUser></MqttUser>
+    <MqttPw></MqttPw>
+    <MqttPreTopic>chroma/</MqttPreTopic>
+  </MQTT>
+</RazerChromaMqtt>
