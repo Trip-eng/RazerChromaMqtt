@@ -7,6 +7,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "RazerChromaMqtt", "RazerChr
 EndProject
 Project("{54435603-DBB4-11D2-8724-00A0C9A8B90C}") = "RazerChromaMqttSetup", "RazerChromaMqttSetup\RazerChromaMqttSetup.vdproj", "{E1636DF1-80D1-4BA1-93E8-83BF8CFAA078}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "RazerChromaMqttConfig", "RazerChromaMqttConfig\RazerChromaMqttConfig.csproj", "{901BC213-F62D-4279-9EC4-233FBE284466}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -19,6 +21,10 @@ Global
 		{16F38688-7D69-4111-BA5B-00D040DE8FF6}.Release|Any CPU.Build.0 = Release|Any CPU
 		{E1636DF1-80D1-4BA1-93E8-83BF8CFAA078}.Debug|Any CPU.ActiveCfg = Debug
 		{E1636DF1-80D1-4BA1-93E8-83BF8CFAA078}.Release|Any CPU.ActiveCfg = Release
+		{901BC213-F62D-4279-9EC4-233FBE284466}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{901BC213-F62D-4279-9EC4-233FBE284466}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{901BC213-F62D-4279-9EC4-233FBE284466}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{901BC213-F62D-4279-9EC4-233FBE284466}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
