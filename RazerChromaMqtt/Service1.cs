@@ -97,11 +97,12 @@ namespace RazerChromaMqtt
 
         private void MqttC_ConnectionLost(object sender, EventArgs e)
         {
-            log.Info("MqttC ConnectionLost");
+            log.Warn("MqttC ConnectionLost");
         }
 
         private bool MqttC_PublishArrived(object sender, PublishArrivedArgs e)
         {
+            log.Debug("Mqtt Rx : " + e.Topic + " : " + e.Payload);
             string[] topic = e.Topic.Substring(mqttPreTopic.Length).Split('/');
             string payload = e.Payload;
             ColoreColor c;  
@@ -137,7 +138,7 @@ namespace RazerChromaMqtt
                                             case "key":
                                                 if (topic.Length < 4)
                                                 {
-                                                    log.Error("Key is no specified ");
+                                                    log.Error("Key is not specified ");
                                                     return false;
                                                 }
                                                 Key key;
@@ -154,28 +155,28 @@ namespace RazerChromaMqtt
                                             case "grid":
                                                 if (topic.Length < 5)
                                                 {
-                                                    log.Error("Position is no specified ");
+                                                    log.Error("Position is not specified ");
                                                     return false;
                                                 }
                                                 int row, column;
                                                 if(!int.TryParse(topic[3],out row))
                                                 {
-                                                    log.Error($"\"{topic[3]}\" nan");
+                                                    log.Error($"\"{topic[3]}\" NaN");
                                                     return false;
                                                 }
                                                 if (!int.TryParse(topic[4], out column))
                                                 {
-                                                    log.Error($"\"{topic[4]}\" nan");
+                                                    log.Error($"\"{topic[4]}\" NaN");
                                                     return false;
                                                 }
-                                                if (row >= KeyboardConstants.MaxRows)
+                                                if (row < 0 || row >= KeyboardConstants.MaxRows)
                                                 {
-                                                    log.Error($"\"{row}\" out of range. Max:" + KeyboardConstants.MaxRows);
+                                                    log.Error($"\"{row}\" out of range. Max:" + (KeyboardConstants.MaxRows - 1));
                                                     return false;
                                                 }
-                                                if (column >= KeyboardConstants.MaxColumns)
+                                                if (column < 0 || column >= KeyboardConstants.MaxColumns)
                                                 {
-                                                    log.Error($"\"{column}\" out of range. Max:" + KeyboardConstants.MaxColumns);
+                                                    log.Error($"\"{column}\" out of range. Max:" + (KeyboardConstants.MaxColumns - 1));
                                                     return false;
                                                 }
                                                 chroma.Keyboard[row, column] = c;
@@ -183,18 +184,18 @@ namespace RazerChromaMqtt
                                             case "zone":
                                                 if (topic.Length < 4)
                                                 {
-                                                    log.Error("Zone is no specified ");
+                                                    log.Error("Zone is not specified ");
                                                     return false;
                                                 }
                                                 int zone;
                                                 if (!int.TryParse(topic[3], out zone))
                                                 {
-                                                    log.Error($"\"{topic[3]}\" nan");
+                                                    log.Error($"\"{topic[3]}\" NaN");
                                                     return false;
                                                 }
-                                                if (zone >= KeyboardConstants.MaxDeathstalkerZones)
+                                                if (zone < 0 || zone >= KeyboardConstants.MaxDeathstalkerZones)
                                                 {
-                                                    log.Error($"\"{zone}\" out of range. Max:" + KeyboardConstants.MaxDeathstalkerZones);
+                                                    log.Error($"\"{zone}\" out of range. Max:" + (KeyboardConstants.MaxDeathstalkerZones - 1));
                                                     return false;
                                                 }
                                                 chroma.Keyboard[zone] = c;
@@ -203,11 +204,61 @@ namespace RazerChromaMqtt
                                                 log.Error($"\"{topic[2]}\" unknown");
                                                 return false;
                                         }
-                                        
+                                    }
+                                    else
+                                    {
+                                        log.Error("no specification (\"all\", \"key\", \"grid\", \"zone\")");
+                                        return false;
                                     }
                                     break;
                                 case "keypad":
-                                    chroma.Keypad.SetAllAsync(c);
+                                    if (topic.Length >= 3)
+                                    {
+                                        switch (topic[2].ToLower())
+                                        {
+                                            case "all":
+                                                chroma.Keypad.SetAllAsync(c);
+                                                break;
+                                            case "grid":
+                                                if (topic.Length < 5)
+                                                {
+                                                    log.Error("Position is not specified ");
+                                                    return false;
+                                                }
+                                                int row, column;
+                                                if (!int.TryParse(topic[3], out row))
+                                                {
+                                                    log.Error($"\"{topic[3]}\" NaN");
+                                                    return false;
+                                                }
+                                                if (!int.TryParse(topic[4], out column))
+                                                {
+                                                    log.Error($"\"{topic[4]}\" NaN");
+                                                    return false;
+                                                }
+                                                if (row < 0 || row >= Colore.Effects.Keypad.KeypadConstants .MaxRows)
+                                                {
+                                                    log.Error($"\"{row}\" out of range. Max:" + (Colore.Effects.Keypad.KeypadConstants.MaxRows - 1));
+                                                    return false;
+                                                }
+                                                if (column < 0 || column >= Colore.Effects.Keypad.KeypadConstants.MaxColumns)
+                                                {
+                                                    log.Error($"\"{column}\" out of range. Max:" + (Colore.Effects.Keypad.KeypadConstants.MaxColumns - 1));
+                                                    return false;
+                                                }
+                                                chroma.Keypad[row, column] = c;
+                                                break;
+                                            default:
+                                                log.Error($"\"{topic[2]}\" unknown");
+                                                return false;
+                                        }
+
+                                    }
+                                    else
+                                    {
+                                        log.Error("no specification (\"all\", \"grid\")");
+                                        return false;
+                                    }
                                     break;
                                 case "mouse":
                                     if (topic.Length >= 3)
@@ -220,7 +271,7 @@ namespace RazerChromaMqtt
                                             case "gridled":
                                                 if (topic.Length < 4)
                                                 {
-                                                    log.Error("Key is no specified ");
+                                                    log.Error("Key is not specified ");
                                                     return false;
                                                 }
                                                 Colore.Effects.Mouse.GridLed gridLed;
@@ -237,28 +288,28 @@ namespace RazerChromaMqtt
                                             case "grid":
                                                 if (topic.Length < 5)
                                                 {
-                                                    log.Error("Position is no specified ");
+                                                    log.Error("Position is not specified ");
                                                     return false;
                                                 }
                                                 int row, column;
                                                 if (!int.TryParse(topic[3], out row))
                                                 {
-                                                    log.Error($"\"{topic[3]}\" nan");
+                                                    log.Error($"\"{topic[3]}\" NaN");
                                                     return false;
                                                 }
                                                 if (!int.TryParse(topic[4], out column))
                                                 {
-                                                    log.Error($"\"{topic[4]}\" nan");
+                                                    log.Error($"\"{topic[4]}\" NaN");
                                                     return false;
                                                 }
-                                                if (row >= Colore.Effects.Mouse.MouseConstants.MaxRows)
+                                                if (row < 0 || row >= Colore.Effects.Mouse.MouseConstants.MaxRows)
                                                 {
-                                                    log.Error($"\"{row}\" out of range. Max:" + Colore.Effects.Mouse.MouseConstants.MaxRows);
+                                                    log.Error($"\"{row}\" out of range. Max:" + (Colore.Effects.Mouse.MouseConstants.MaxRows - 1));
                                                     return false;
                                                 }
-                                                if (column >= Colore.Effects.Mouse.MouseConstants.MaxColumns)
+                                                if (column < 0 || column >= Colore.Effects.Mouse.MouseConstants.MaxColumns)
                                                 {
-                                                    log.Error($"\"{column}\" out of range. Max:" + Colore.Effects.Mouse.MouseConstants.MaxColumns);
+                                                    log.Error($"\"{column}\" out of range. Max:" + (Colore.Effects.Mouse.MouseConstants.MaxColumns - 1));
                                                     return false;
                                                 }
                                                 chroma.Mouse[row, column] = c;
@@ -269,17 +320,130 @@ namespace RazerChromaMqtt
                                         }
 
                                     }
+                                    else
+                                    {
+                                        log.Error("no specification (\"all\", \"gridled\", \"grid\")");
+                                        return false;
+                                    }
                                     break;
                                 case "mousepad":
-                                    chroma.Mousepad.SetAllAsync(c);
+                                    if (topic.Length >= 3)
+                                    {
+                                        switch (topic[2].ToLower())
+                                        {
+                                            case "all":
+                                                chroma.Mousepad.SetAllAsync(c);
+                                                break;
+                                            case "index":
+                                                if (topic.Length < 4)
+                                                {
+                                                    log.Error("Index is not specified ");
+                                                    return false;
+                                                }
+                                                int index;
+                                                if (!int.TryParse(topic[3], out index))
+                                                {
+                                                    log.Error($"\"{topic[3]}\" NaN");
+                                                    return false;
+                                                }
+                                                if (index < 0 || index >= Colore.Effects.Mousepad.MousepadConstants.MaxLeds)
+                                                {
+                                                    log.Error($"\"{index}\" out of range. Max:" + (Colore.Effects.Mousepad.MousepadConstants.MaxLeds-1));
+                                                    return false;
+                                                }
+                                                chroma.Mousepad[index] = c;
+                                                break;
+                                            default:
+                                                log.Error($"\"{topic[2]}\" unknown");
+                                                return false;
+                                        }
+
+                                    }
+                                    else
+                                    {
+                                        log.Error("no specification (\"all\", \"index\")");
+                                        return false;
+                                    }
                                     break;
                                 case "headset":
-                                    chroma.Headset.SetAllAsync(c);
+                                    if (topic.Length >= 3)
+                                    {
+                                        switch (topic[2].ToLower())
+                                        {
+                                            case "all":
+                                                chroma.Headset.SetAllAsync(c);
+                                                break;
+                                            case "index":
+                                                if (topic.Length < 4)
+                                                {
+                                                    log.Error("Index is not specified ");
+                                                    return false;
+                                                }
+                                                int index;
+                                                if (!int.TryParse(topic[3], out index))
+                                                {
+                                                    log.Error($"\"{topic[3]}\" NaN");
+                                                    return false;
+                                                }
+                                                if (index < 0 || index >= Colore.Effects.Headset.HeadsetConstants.MaxLeds)
+                                                {
+                                                    log.Error($"\"{index}\" out of range. Max:" + (Colore.Effects.Headset.HeadsetConstants.MaxLeds - 1));
+                                                    return false;
+                                                }
+                                                chroma.Headset[index] = c;
+                                                break;
+                                            default:
+                                                log.Error($"\"{topic[2]}\" unknown");
+                                                return false;
+                                        }
+                                    }
+                                    else
+                                    {
+                                        log.Error("no specification (\"all\", \"index\")");
+                                        return false;
+                                    }
+                                    break;
+                                case "link":
+                                    if(topic.Length >= 3)
+                                    {
+                                        switch (topic[2])
+                                        {
+                                            case "all":
+                                                chroma.ChromaLink.SetAllAsync(c);
+                                                break;
+                                            case "index":
+                                                if (topic.Length < 4)
+                                                {
+                                                    log.Error("Index is not specified ");
+                                                    return false;
+                                                }
+                                                int index;
+                                                if (!int.TryParse(topic[3], out index))
+                                                {
+                                                    log.Error($"\"{topic[3]}\" NaN");
+                                                    return false;
+                                                }
+                                                if (index < 0 || index >= Colore.Effects.ChromaLink.ChromaLinkConstants.MaxLeds)
+                                                {
+                                                    log.Error($"\"{index}\" out of range. Max:" + (Colore.Effects.ChromaLink.ChromaLinkConstants.MaxLeds - 1));
+                                                    return false;
+                                                }
+                                                chroma.ChromaLink[index] = c;
+                                                break;
+                                            default:
+                                                log.Error($"\"{topic[2]}\" unknown");
+                                                return false;
+                                        }
+                                    }
+                                    else
+                                    {
+                                        log.Error("no specification (\"all\", \"index\")");
+                                        return false;
+                                    }
                                     break;
                                 default:
                                     log.Error($"\"{topic[1]}\" unknown");
                                     return false;
-
                             }
                             string retTopic = "state/";
                             for (int i = 1; i < topic.Length; i++)
@@ -293,15 +457,15 @@ namespace RazerChromaMqtt
                         log.Error($"\"{topic[0]}\" unknown");
                         return false;
                 }
-
             return true;
         }
-
         protected override void OnStop()
         {
+            if(mqttClient.IsConnected) mqttClient.Disconnect();
+            
 #if DEBUG
-            Environment.Exit(0); 
-#endif  
+            Environment.Exit(0);
+#endif
         }
 
         #region Helper 
