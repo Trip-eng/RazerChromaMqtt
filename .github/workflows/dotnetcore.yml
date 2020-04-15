@@ -17,8 +17,6 @@ jobs:
       uses: actions/setup-dotnet@v1
       with:
         dotnet-version: 3.1.201
-    - name: Install dependencies
-      run: dotnet restore
     - name: NuGet Setup
       uses: nuget/setup-nuget@v1
       with:
@@ -26,6 +24,8 @@ jobs:
         nuget-version: '5.x'
     - name: NuGet Restore
       run: nuget restore RazerChromaMqtt.sln
+    - name: Install dependencies
+      run: dotnet restore
     - name: Build
       run: dotnet build --configuration Release 
     - name: Test
