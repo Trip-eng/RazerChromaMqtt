@@ -27,6 +27,6 @@ jobs:
     - name: Install dependencies
       run: dotnet restore
     - name: Build
-      run: dotnet build --configuration Release 
+      run: dotnet build RazerChromaMqtt/RazerChromaMqtt.csproj --configuration Release 
     - name: Test
       run: dotnet test --no-restore --verbosity normal
