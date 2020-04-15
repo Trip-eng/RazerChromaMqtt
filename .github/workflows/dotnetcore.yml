@@ -19,10 +19,12 @@ jobs:
         dotnet-version: 3.1.101
     - name: Install dependencies
       run: dotnet restore
-    - uses: nuget/setup-nuget@v1
-        with:
-          nuget-api-key: ${{ secrets.NuGetAPIKey }}
-          nuget-version: '5.x'
+    - name: NuGet Setup
+      uses: nuget/setup-nuget@v1
+      with:
+        nuget-api-key: ${{ secrets.NuGetAPIKey }}
+        nuget-version: '5.x'
+    - name: NuGet Restore
       run: nuget restore .\RazerChromaMqtt.sln
     - name: Build
       run: dotnet build --configuration Release --no-restore
