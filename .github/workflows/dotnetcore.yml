@@ -1,10 +1,6 @@
 name: .NET Framework
 
 on:
-  push:
-    branches: [ master ]
-    tags: 
-      - build*
   pull_request:
     branches: [ master ]
 
