@@ -3,6 +3,8 @@ name: .NET Framework
 on:
   push:
     branches: [ master ]
+    tags: 
+      - build*
   pull_request:
     branches: [ master ]
 
@@ -19,15 +21,3 @@ jobs:
       run: nuget restore RazerChromaMqtt.sln
     - name: Build solution
       run: msbuild RazerChromaMqtt.sln -p:Configuration=Release 
-    - name: Build Setup
-      run: msbuild RazerChromaMqtt/RazerChromaMqttSetup.vdproj -p:Configuration=Release 
-    - name: upload Output .msi
-      uses: actions/upload-artifact@v1
-      with:
-        name: RazerChromaMqttSetup.msi
-        path: ${{ github.workspace }}/RazerChromaMqttSetup/Release/RazerChromaMqttSetup.msi
-    - name: upload Output .exe
-      uses: actions/upload-artifact@v1
-      with:
-        name: setup.exe
-        path: ${{ github.workspace }}/RazerChromaMqttSetup/Release/setup.exe
