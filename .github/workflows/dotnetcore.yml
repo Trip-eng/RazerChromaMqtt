@@ -13,20 +13,9 @@ jobs:
 
     steps:
     - uses: actions/checkout@v2
-    - name: Setup .NET Core
-      uses: actions/setup-dotnet@v1
-      with:
-        dotnet-version: 3.1.201
-    - name: NuGet Setup
-      uses: nuget/setup-nuget@v1
-      with:
-        nuget-api-key: ${{ secrets.NuGetAPIKey }}
-        nuget-version: '5.x'
-    - name: NuGet Restore
+    - name: Setup .net framework env
+      uses: vrnobody/Setup-DotNetFrameworkEnv@v1
+    - name: Restore Nuget packages
       run: nuget restore RazerChromaMqtt.sln
-    - name: Install dependencies
-      run: dotnet restore
-    - name: Build
-      run: dotnet build RazerChromaMqtt/RazerChromaMqtt.csproj --configuration Release 
-    - name: Test
-      run: dotnet test --no-restore --verbosity normal
+    - name: Build solution
+      run: msbuild RazerChromaMqtt.sln -p:Configuration=Release 
