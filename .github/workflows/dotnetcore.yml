@@ -19,6 +19,8 @@ jobs:
       run: nuget restore RazerChromaMqtt.sln
     - name: Build solution
       run: msbuild RazerChromaMqtt.sln -p:Configuration=Release 
+    - name: Build Setup
+      run: msbuild RazerChromaMqtt/RazerChromaMqttSetup.vdproj -p:Configuration=Release 
     - name: upload Output .msi
       uses: actions/upload-artifact@v1
       with:
