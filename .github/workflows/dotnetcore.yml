@@ -23,9 +23,9 @@ jobs:
       uses: actions/upload-artifact@v1
       with:
         name: RazerChromaMqttSetup.msi
-        path: ../RazerChromaMqttSetup/Release/RazerChromaMqttSetup.msi
+        path: ${{ github.workspace }}/RazerChromaMqttSetup/Release/RazerChromaMqttSetup.msi
     - name: upload Output .exe
       uses: actions/upload-artifact@v1
       with:
         name: setup.exe
-        path: ../RazerChromaMqttSetup/Release/setup.exe
+        path: ${{ github.workspace }}/RazerChromaMqttSetup/Release/setup.exe
